@@ -30,6 +30,20 @@ vim () {
   fi
 }
 
+new () {
+  tmux new-window 'vifm -c "set vicmd=dmux\ vim";bash -l' \; \
+    split-window -h 'dmux vim;bash -l' \; \
+    resize-pane -L 70 \; \
+    select-pane -t 2 \; \
+    split-window -v \; \
+    resize-pane -D 10 \; \
+    select-pane -t 1 \; \
+    bind-key -n C-z select-pane -t 2 \\\; resize-pane -Z \; \
+    bind-key -n C-q kill-session \; \
+    bind-key -n S-Down select-pane -t 3 \\\; break-pane -d -n _terminal_pane \; \
+    bind-key -n S-Up select-pane -t 2 \\\; join-pane -s $.1 -l 10
+}
+
 init () {
   if [ -z "$1" ]; then
     tmux \
