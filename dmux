@@ -1,18 +1,18 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
 if [ -z $(which tmux) ] || [ -z $(which vifm) ] || [ -z $(which nvim) ]; then
   echo "Please make sure tmux, vifm and neovim is installed"
   exit
 fi
 
-tmux_nvim () {
+vim () {
   if [ ! -z "$TMUX" ]; then
     tmux_current_session=$(tmux display-message -p '#S')
     tmux_current_window=$(tmux display-message -p '#I')
     tmux_current_pane=2
-    # tmux_current_pane=$(tmux display-message -p '#P')
     tmux_nvim_socket=$(ls /tmp/ | grep ".*tmux-${tmux_current_session}-[1-9]-[1-9]-nvimsocket")
 
-    if [[ $tmux_nvim_socket =~ ^tmux-${tmux_current_session}-([1-9])-([1-9])-nvimsocket ]]; then
+    if [[ $tmux_nvim_socket =~ ^tmux-${tmux_current_session}-(${tmux_current_window})-([1-9])-nvimsocket ]]; then
       tmux_target_pane=${BASH_REMATCH[2]}
     else
       tmux_target_pane=0
@@ -24,47 +24,19 @@ tmux_nvim () {
       tmux select-pane -t $tmux_target_pane | nvr --servername $nvim_remote_tmux_socket "$@"
     else
       tmux_current_pane=2
-      # if [ $tmux_current_pane != 3 ]; then
-        # # NVIM_LISTEN_ADDRESS=/tmp/tmux-$tmux_current_session-$tmux_current_window-3-nvimsocket tmux send-keys -t 3 C-z 'nvim' Enter
-        # tmux send-keys -t 3 C-z 'NVIM_LISTEN_ADDRESS=/tmp/tmux-'$tmux_current_session'-'$tmux_current_window'-3-nvimsocket nvim' Enter
-        # sleep 3;
-        # tmux select-pane -t 3 | nvr --servername /tmp/tmux-$tmux_current_session-$tmux_current_window-3-nvimsocket "$@"
-      # else
-        NVIM_LISTEN_ADDRESS=/tmp/tmux-$tmux_current_session-$tmux_current_window-$tmux_current_pane-nvimsocket nvim "$@"
-      # fi
+      NVIM_LISTEN_ADDRESS=/tmp/tmux-$tmux_current_session-$tmux_current_window-$tmux_current_pane-nvimsocket nvim "$@"
     fi
   else
     NVIM_LISTEN_ADDRESS=/tmp/nvimsocket nvim "$@"
   fi
 }
 
-export -f tmux_nvim
-
-if [ -z "$1" ]; then
-  tmux \
-     new-session -d 'vifm -c "set vicmd=tmux_nvim";bash -l'
-  tmux -2 a \; \
-    split-window -h 'tmux_nvim;bash -l' \; \
-    resize-pane -L 70 \; \
-    select-pane -t 2 \; \
-    split-window -v \; \
-    resize-pane -D 10 \; \
-    select-pane -t 1 \; \
-    bind-key -n C-z select-pane -t 2 \\\; resize-pane -Z \; \
-    bind-key -n C-q kill-session \; \
-    bind-key -n S-Down select-pane -t 3 \\\; break-pane -d -n _terminal_pane \; \
-    bind-key -n S-Up select-pane -t 2 \\\; join-pane -s $.1 -l 10
-else
-  if [ ! -z "$(tmux ls | grep $1)" ]; then
-    echo "- Found existing session: ${1}"
-    echo "- Opening: ${1}"
-    sleep 5
-    tmux a -t ${1}
-  else
+init () {
+  if [ -z "$1" ]; then
     tmux \
-     new-session -s ${1} -d 'vifm -c "set vicmd=tmux_nvim";bash -l'
+       new-session -d 'vifm -c "set vicmd=dmux\ vim";bash -l'
     tmux -2 a \; \
-      split-window -h 'tmux_nvim;bash -l' \; \
+      split-window -h 'dmux vim;bash -l' \; \
       resize-pane -L 70 \; \
       select-pane -t 2 \; \
       split-window -v \; \
@@ -74,5 +46,37 @@ else
       bind-key -n C-q kill-session \; \
       bind-key -n S-Down select-pane -t 3 \\\; break-pane -d -n _terminal_pane \; \
       bind-key -n S-Up select-pane -t 2 \\\; join-pane -s $.1 -l 10
+      else
+    if [ ! -z "$(tmux ls | grep $1)" ]; then
+      echo "- Found existing session: ${1}"
+      echo "- Opening: ${1}"
+      sleep 5
+      tmux a -t ${1}
+    else
+      tmux \
+       new-session -s ${1} -d 'vifm -c "set vicmd=dmux\ vim";bash -l'
+      tmux -2 a \; \
+        split-window -h 'dmux vim;bash -l' \; \
+        resize-pane -L 70 \; \
+        select-pane -t 2 \; \
+        split-window -v \; \
+        resize-pane -D 10 \; \
+        select-pane -t 1 \; \
+        bind-key -n C-z select-pane -t 2 \\\; resize-pane -Z \; \
+        bind-key -n C-q kill-session \; \
+        bind-key -n S-Down select-pane -t 3 \\\; break-pane -d -n _terminal_pane \; \
+        bind-key -n S-Up select-pane -t 2 \\\; join-pane -s $.1 -l 10
+    fi
   fi
+}
+
+# Check if the function exists (bash specific)
+if declare -f "$1" > /dev/null
+then
+  # call arguments verbatim
+  "$@"
+else
+  # Show a helpful error
+  echo "'$1' is not a known function name" >&2
+  exit 1
 fi
