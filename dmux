@@ -31,7 +31,7 @@ vim () {
 }
 
 new () {
-  tmux new-window 'vifm -c "set vicmd=dmux\ vim";bash -l' \; \
+  tmux new-window 'vifm -c ":only" -c "set vicmd=dmux\ vim";bash -l' \; \
     split-window -h 'dmux vim;bash -l' \; \
     resize-pane -L 70 \; \
     select-pane -t 2 \; \
@@ -47,7 +47,7 @@ new () {
 init () {
   if [ -z "$1" ]; then
     tmux \
-       new-session -d 'vifm -c "set vicmd=dmux\ vim";bash -l'
+       new-session -d 'vifm -c ":only" -c "set vicmd=dmux\ vim";bash -l'
     tmux -2 a \; \
       split-window -h 'dmux vim;bash -l' \; \
       resize-pane -L 70 \; \
@@ -67,7 +67,7 @@ init () {
       tmux a -t ${1}
     else
       tmux \
-       new-session -s ${1} -d 'vifm -c "set vicmd=dmux\ vim";bash -l'
+       new-session -s ${1} -d 'vifm -c ":only" -c "set vicmd=dmux\ vim";bash -l'
       tmux -2 a \; \
         split-window -h 'dmux vim;bash -l' \; \
         resize-pane -L 70 \; \
