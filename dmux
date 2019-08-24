@@ -144,6 +144,10 @@ then
   "$@"
 else
   # Show a helpful error
-  echo "'$1' is not a known function name" >&2
-  exit 1
+  if [[ "${1}" == '' ]]; then
+    init
+  else
+    echo "'$1' is not a known function name" >&2
+    exit 1
+  fi
 fi
