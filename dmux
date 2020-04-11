@@ -12,7 +12,7 @@ if [ -z $(which tmux) ] || [ -z $(which fzf) ] || [ -z $(which fd) ] || [ -z $(w
   echo ""
   echo "  ***MacOs Install***"
   echo ""
-  echo "  brew install tmux vifm neovim neovim-remote fzf fd"
+  echo "  brew install tmux vifm neovim fzf fd"
   echo "  pip3 neovim-remote"
   echo ""
   exit
