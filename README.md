@@ -28,9 +28,9 @@ Change the `default_projects_dir="$HOME/Cloud/Development/projects"` variable in
 
 ## Usage
 #### Initialize dmux environment
-`dmux init`
+`dmux init # or simply dmux`
 
-#### New dmux window inside tmux
+#### New dmux window (inside of tmux)
 `dmux new`
 
 #### New dmux project (outside of tmux)
