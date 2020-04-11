@@ -21,9 +21,11 @@ fi
 default_projects_dir="$HOME/Cloud/Development/projects"
 project_types=(bin web)
 project_languages=(
+  ansible
+  docker
   dotnet
   go
-  javascript
+  js
   php
   python
   ruby
@@ -69,13 +71,13 @@ new () {
 
   elif [ -z "$TMUX" ] && [ ! -z "$1" ]; then
 
-    project_type=$(printf '%s\n' "${project_types[@]}" | fzf --prompt="  What type of project is this? " --height 10% --reverse)
+    project_type=$(printf '%s\n' "${project_types[@]}" | fzf --prompt="  What type of project is this? " --height 30% --reverse)
 
     if [ -z $project_type ]; then
       exit
     fi
 
-    project_language=$(printf '%s\n' "${project_languages[@]}" | fzf --prompt="  What programming language will it be in? " --height 10% --reverse)
+    project_language=$(printf '%s\n' "${project_languages[@]}" | fzf --prompt="  What programming language will it be in? " --height 30% --reverse)
 
     if [ -z $project_language ]; then
       exit
@@ -116,7 +118,7 @@ open () {
     dir=$1
   fi
 
-  project_path="$(fd . $dir/**/* --type d | awk -F/ '{print $(NF-2)FS$(NF-1)FS$(NF)}' | fzf --prompt="  Open Project: $dir/>" --height 10% --reverse | awk -F/ -v dir=$dir '{print dir FS$0}')"
+  project_path="$(fd . $dir/**/* --type d -d 1 | awk -F/ '{print $(NF-2)FS$(NF-1)FS$(NF)}' | sort | fzf --prompt="  Open Project: $dir/>" --height 30% --reverse | awk -F/ -v dir=$dir '{print dir FS$0}')"
 
   if [ -z "$project_path" ]; then
     exit
