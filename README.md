@@ -34,7 +34,7 @@ Change the `default_projects_dir="$HOME/Cloud/Development/projects"` variable in
 `dmux new`
 
 #### New dmux project (outside of tmux)
-`dmux new [project_name`
+`dmux new [project_name]`
 
 #### Open a dmux project with FZF
 `dmux open`
