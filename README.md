@@ -22,7 +22,7 @@ Add an alias to replace neovim of vim in your `~/.bashrc` file:
 alias vim='dmux vim'
 ```
 *This way vim will continue to work the same when not in dmux*
-# Step three
+#### Step three
 Change the `default_projects_dir="$HOME/Cloud/Development/projects"` variable in the dmux file to match your project folders location
 *dmux will automatically add a bin and web directory in the `default_projects_dir` location to store your projects in when you create your projects using `dmux new [project_name]`
 
