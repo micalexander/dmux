@@ -24,7 +24,10 @@ project_types=()
 project_languages=()
 
 declare -A types=(
-  [web]=
+  [web]=
+  [desktop]=
+  [game]=
+  [mobile]=
   [cli]=
 )
 
@@ -260,8 +263,12 @@ open () {
       icons["scss"]=""
       icons["htm"]=""
       icons["html"]=""
-      icons["web"]=""
-      icons["www"]=""
+      icons["web"]=""
+      icons["www"]=""
+      icons["native"]=""
+      icons["desktop"]=""
+      icons["game"]=
+      icons["mobile"]=""
       icons["chrome"]=""
       icons["slim"]=""
       icons["ejs"]=""
@@ -393,8 +400,13 @@ init () {
       exit
     fi
   elif [ ! -z "$1" ] && [ ! -d "$1" ] && [ -f "$1" ]; then
+    if [ "$(dirname $1)" = "." ]; then
+    session_name=$(basename $(pwd))
+      session_dir=$(pwd)
+    else
     session_name=$(basename -- $(dirname $1))
-    session_dir=$(dirname $1)
+      session_dir=$(dirname $1)
+    fi
     session_file=$1
     session_pane=2
     if [ ! -z "$(tmux ls | grep $session_name)" ]; then
