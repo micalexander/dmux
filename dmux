@@ -376,9 +376,13 @@ init () {
   if [ -z "$1" ]; then
     session_name=$(basename -- $(pwd))
     session_dir=$(pwd)
-  else
+    session_file=''
+    session_pane=1
+  elif [ ! -z "$1" ] && [ -d "$1" ]; then
     session_name=$(basename -- $1)
     session_dir=${1}
+    session_file=''
+    session_pane=1
     if [ ! -z "$(tmux ls | grep $session_name)" ]; then
       echo ""
       echo "  Found existing session: ${session_name}"
@@ -386,17 +390,32 @@ init () {
       echo ""
       sleep 5
       tmux a -t ${session_name}
+      exit
+    fi
+  elif [ ! -z "$1" ] && [ ! -d "$1" ] && [ -f "$1" ]; then
+    session_name=$(basename -- $(dirname $1))
+    session_dir=$(dirname $1)
+    session_file=$1
+    session_pane=2
+    if [ ! -z "$(tmux ls | grep $session_name)" ]; then
+      echo ""
+      echo "  Found existing session: ${session_name}"
+      echo "  Opening: ${session_name}"
+      echo ""
+      sleep 5
+      tmux a -t ${session_name}
+      exit
     fi
   fi
 
   tmux \
     new-session -c ${session_dir} -s $(basename -- ${session_name}) 'vifm -c ":only" -c "set vicmd=dmux\ vim";bash -l' \; \
-    split-window -h 'dmux vim;bash -l' \; \
+    split-window -h 'dmux vim '$session_file';bash -l' \; \
     split-window -h \; \
     select-layout '6a23,198x71,0,0{39x71,0,0,0,158x71,40,0[158x45,40,0,1,158x25,40,46,2]}' \; \
     set -g base-index 1 \; \
     setw -g pane-base-index 1 \; \
-    select-pane -t 1 \; \
+    select-pane -t $session_pane \; \
     set -g status-keys vi \; \
     set -g history-limit 10000 \; \
     set -sg escape-time 0 \; \
@@ -428,6 +447,8 @@ else
   # Show a helpful error
   if [[ "${1}" == '' ]]; then
     init
+  elif [[ -f "${1}" ]] || [[ -d "${1}" ]]; then
+    init $1
   else
     echo "'$1' is not a known function name" >&2
     exit 1
