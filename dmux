@@ -20,8 +20,37 @@ fi
 
 default_projects_dir="$HOME/Cloud/Development/projects"
 
-project_types=()
-project_languages=()
+declare -A fgcolor=(
+  [none]=0
+  [black]=30
+  [red]=31
+  [green]=32
+  [yellow]=33
+  [blue]=34
+  [magenta]=35
+  [cyan]=36
+  [white]=37
+)
+
+declare -A bgcolor=(
+  [black]=40
+  [red]=41
+  [green]=42
+  [yellow]=43
+  [blue]=44
+  [magenta]=45
+  [cyan]=46
+  [white]=47
+)
+
+declare -A attributes=(
+  [none]=0
+  [bold]=1
+  [underscore]=4
+  [blink]=5
+  [reverseVideo]=7
+  [concealed]=8
+)
 
 declare -A types=(
   [web]=
@@ -37,7 +66,6 @@ declare -A languages=(
   [txt]=e
   [styl]=
   [scss]=
-  [htm]=
   [html]=
   [slim]=
   [ejs]=
@@ -54,6 +82,7 @@ declare -A languages=(
   # [code]=
   [jsx]=
   [ruby]=
+  [gem]=
   [php]=
   [py]=
   [pyc]=
@@ -77,6 +106,8 @@ declare -A languages=(
   [twig]=
   [cpp]=
   [c++]=
+  [dotnet]=
+  [c\#]=
   [cxx]=
   [cc]=
   [cp]=
@@ -133,14 +164,108 @@ declare -A languages=(
   [jl]=
 )
 
+declare -A colormap=(
+  [web]=blue
+  [desktop]=yellow
+  [game]=red
+  [mobile]=magenta
+  [cli]=green
+  [ansible]=yellow
+  [bash]=blue
+  [ruby]=magenta
+  [gem]=magenta
+  [php]=blue
+  [js]=yellow
+  [go]=cyan
+  [dart]=blue
+  [puppet]=magenta
+  [twig]=green
+  [sass]=red
+  [react]=blue
+  [vim]=green
+  [vue]=green
+  [html]=yellow
+  [css]=blue
+  [dotnet]=magenta
+  [drupal]=blue
+  [markdown]=white
+  [python]=blue
+  [docker]=blue
+  [coffee]=blue
+  [ts]=blue
+  [tsx]=blue
+  [c\#]=magenta
+  [gulp]=red
+  [swift]=red
+  [c++]=blue
+  [cc]=blue
+  [cpp]=blue
+  [cxx]=blue
+  [py]=blue
+  [pyc]=blue
+  [pyo]=blue
+  [pyd]=blue
+  [cp]=blue
+  [db]=blue
+  [sql]=blue
+  [dump]=blue
+  [java]=red
+  [diff]=red
+  [d]=red
+  [lua]=blue
+  [c]=blue
+  [clj]=blue
+  [cljc]=blue
+  [cljs]=blue
+  [edn]=blue
+  [scala]=red
+  [gulpfile]=red
+  [wordpress]=white
+)
+
+declare -A icons=()
+
 for i in "${!types[@]}"
 do
-  project_types+=("${types[$i]}  $i")
+  if [ -z "${icons[$i]}" ]; then
+    icons[$i]=${types[$i]}
+  fi
 done
 
 for i in "${!languages[@]}"
 do
-  project_languages+=("${languages[$i]}  $i")
+  if [ -z "${icons[$i]}" ]; then
+    icons[$i]=${languages[$i]}
+  fi
+done
+
+# Default color to none
+for i in "${!languages[@]}"
+do
+  if [ -z "${colormap[$i]}" ]; then
+    colormap[$i]=none
+  fi
+done
+
+# Default color to none
+for i in "${!types[@]}"
+do
+  if [ -z "${colormap[$i]}" ]; then
+    colormap[$i]=none
+  fi
+done
+
+project_types=()
+project_languages=()
+
+for i in "${!types[@]}"
+do
+  project_types+=("$i")
+done
+
+for i in "${!languages[@]}"
+do
+  project_languages+=("$i")
 done
 
 function devicons_get_filetype_symbol {
@@ -190,6 +315,20 @@ vim () {
   fi
 }
 
+iconize_new () {
+  while read data; do
+    echo -e "$(addcolor ${icons[$data]} $data)  $data"
+  done
+}
+
+addcolor () {
+
+  prefix="\033["
+  suffix="m"
+
+  echo -e "$prefix${fgcolor[${colormap[$2]}]}$suffix$1$prefix${fgcolor[none]}$suffix"
+}
+
 new () {
   if [ ! -z "$TMUX" ]; then
 
@@ -202,14 +341,18 @@ new () {
       select-pane -t 1
 
   elif [ -z "$TMUX" ] && [ ! -z "$1" ]; then
-
-    project_type=$(printf '%s\n' "${project_types[@]}" | sort -k2 | fzf --prompt="  What type of project is this? " --height 1% --reverse | awk -F' ' '{ print $(NF) }' )
+    #   print color[$2]$1color["blank"]"  "$2
+    # }
+    # {
+    #   addcolor()
+    # }' | sort -k2 | fzf --ansi --prompt="  What type of project is this? " --height 1% --reverse | awk -F' ' '{ print $(NF) }' )
+    project_type=$(printf "%s\n" "${project_types[@]}" | iconize_new | sort -k2 | fzf --ansi --prompt="  What type of project is this? " --height 1% --reverse | awk -F' ' '{ print $(NF) }' )
 
     if [ -z $project_type ]; then
       exit
     fi
 
-    project_language=$(printf '%s\n' "${project_languages[@]}" | sort -k2 | fzf --prompt="  What is the main technology used? " --height 30% --reverse | awk -F' ' '{ print $(NF) }')
+    project_language=$(printf "%s\n" "${project_languages[@]}" | iconize_new | sort -k2 | fzf --ansi --prompt="  What is the main technology used? " --height 30% --reverse | awk -F' ' '{ print $(NF) }')
 
     if [ -z $project_language ]; then
       exit
@@ -243,8 +386,13 @@ new () {
   fi
 }
 
-function some () {
-  printf yo
+iconize_open () {
+  while read data; do
+    col1=$(echo $data | awk -F/ '{ print $(NF -2) }' )
+    col2=$(echo $data | awk -F/ '{ print $(NF -1) }' )
+    col3=$(echo $data | awk -F/ '{ print $(NF) }' )
+    echo -e "$(addcolor ${icons[$col1]} $col1)  $col1 $(addcolor ${icons[$col2]} $col2) $col2 $col3"
+  done
 }
 
 open () {
@@ -254,123 +402,7 @@ open () {
     dir=$1
   fi
 
-  project_path="$(fd . $dir/**/* --type d -d 1 | awk -F/ '
-  function addicons()
-  {
-      icons["docker"]=""
-      icons["txt"]="e"
-      icons["styl"]=""
-      icons["scss"]=""
-      icons["htm"]=""
-      icons["html"]=""
-      icons["web"]=""
-      icons["www"]=""
-      icons["native"]=""
-      icons["desktop"]=""
-      icons["game"]=
-      icons["mobile"]=""
-      icons["chrome"]=""
-      icons["slim"]=""
-      icons["ejs"]=""
-      icons["wordpress"]=""
-      icons["wp"]=""
-      icons["gulp"]=""
-      icons["gulpfile"]=""
-      icons["css"]=""
-      icons["less"]=""
-      icons["md"]=""
-      icons["drupal"]=""
-      icons["markdown"]=""
-      icons["json"]=""
-      icons["js"]=""
-      icons["javascript"]=""
-      icons["code"]=""
-      icons["jsx"]=""
-      icons["rb"]=""
-      icons["ruby"]=""
-      icons["php"]=""
-      icons["py"]=""
-      icons["pyc"]=""
-      icons["pyo"]=""
-      icons["pyd"]=""
-      icons["python"]=""
-      icons["coffee"]=""
-      icons["mustache"]=""
-      icons["hbs"]=""
-      icons["conf"]=""
-      icons["ini"]=""
-      icons["yml"]=""
-      icons["bat"]=""
-      icons["jpg"]=""
-      icons["jpeg"]=""
-      icons["bmp"]=""
-      icons["png"]=""
-      icons["gif"]=""
-      icons["ico"]=""
-      icons["twig"]=""
-      icons["cpp"]=""
-      icons["c++"]=""
-      icons["cxx"]=""
-      icons["cc"]=""
-      icons["cp"]=""
-      icons["c"]=""
-      icons["hs"]=""
-      icons["lhs"]=""
-      icons["lua"]=""
-      icons["java"]=""
-      icons["bash"]="$"
-      icons["ansible"]=""
-      icons["sh"]=""
-      icons["cli"]=""
-      icons["fish"]=""
-      icons["ml"]="λ"
-      icons["mli"]="λ"
-      icons["diff"]=""
-      icons["db"]=""
-      icons["sql"]=""
-      icons["dump"]=""
-      icons["clj"]=""
-      icons["cljc"]=""
-      icons["cljs"]=""
-      icons["edn"]=""
-      icons["scala"]=""
-      icons["go"]=""
-      icons["dart"]=""
-      icons["xul"]=""
-      icons["sln"]=""
-      icons["suo"]=""
-      icons["pl"]=""
-      icons["pm"]=""
-      icons["t"]=""
-      icons["rss"]=""
-      icons["f#"]=""
-      icons["fsscript"]=""
-      icons["fsx"]=""
-      icons["fs"]=""
-      icons["fsi"]=""
-      icons["rs"]=""
-      icons["rlib"]=""
-      icons["d"]=""
-      icons["erl"]=""
-      icons["hrl"]=""
-      icons["vim"]=""
-      icons["react"]=""
-      icons["dropbox"]=""
-      icons["pp"]=""
-      icons["vue"]="﵂"
-      icons["elm"]=""
-      icons["swift"]=""
-      icons["ai"]=""
-      icons["psd"]=""
-      icons["psb"]=""
-      icons["ts"]=""
-      icons["tsx"]=""
-      icons["jl"]=""
-      print icons[$(NF -2)]"  "$(NF -2)" "icons[$(NF -1)]" "$(NF -1)" "$(NF) " "
-    }
-  {
-    addicons()
-  }' | sort -k5 | fzf --prompt="  Open Project: $dir/> " --height 30% --reverse -d" " --with-nth 1,2,4,2,6 | awk -F' ' -v dir=$dir -v slash='/' '{print dir slash $(NF -3) slash $(NF -1) slash $(NF)}')"
+  project_path="$(fd . $dir/**/* --type d -d 1 | iconize_open | sort -k5 | fzf --ansi --prompt="  Open Project: $dir/> " --height 30% --reverse -d" " --with-nth 1,2,4,2,6 | awk -F' ' -v dir=$dir -v slash='/' '{print dir slash $(NF -3) slash $(NF -1) slash $(NF)}')"
 
   if [ -z "$project_path" ]; then
     exit
