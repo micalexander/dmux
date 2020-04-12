@@ -19,18 +19,147 @@ if [ -z $(which tmux) ] || [ -z $(which fzf) ] || [ -z $(which fd) ] || [ -z $(w
 fi
 
 default_projects_dir="$HOME/Cloud/Development/projects"
-project_types=(bin web)
-project_languages=(
-  ansible
-  docker
-  dotnet
-  go
-  js
-  php
-  python
-  ruby
-  sql
+
+project_types=()
+project_languages=()
+
+declare -A types=(
+  [web]=
+  [cli]=
 )
+
+declare -A languages=(
+  [ansible]=
+  [docker]=
+  [txt]=e
+  [styl]=
+  [scss]=
+  [htm]=
+  [html]=
+  [slim]=
+  [ejs]=
+  [wordpress]=
+  [gulp]=
+  [gulpfile]=
+  [css]=
+  [less]=
+  [md]=
+  [drupal]=
+  [markdown]=
+  [json]=
+  [js]=
+  # [code]=
+  [jsx]=
+  [ruby]=
+  [php]=
+  [py]=
+  [pyc]=
+  [pyo]=
+  [pyd]=
+  [python]=
+  [coffee]=
+  [mustache]=
+  [handlebars]=
+  [hbs]=
+  [conf]=
+  [ini]=
+  [yml]=
+  [bat]=
+  # [jpg]=
+  # [jpeg]=
+  # [bmp]=
+  # [png]=
+  # [gif]=
+  # [ico]=
+  [twig]=
+  [cpp]=
+  [c++]=
+  [cxx]=
+  [cc]=
+  [cp]=
+  [c]=
+  [hs]=
+  [lhs]=
+  [lua]=
+  [java]=
+  [bash]=$
+  [sh]=
+  [fish]=
+  [ml]=λ
+  [mli]=λ
+  [diff]=
+  [db]=
+  [sql]=
+  [dump]=
+  [clj]=
+  [cljc]=
+  [cljs]=
+  [edn]=
+  [scala]=
+  [go]=
+  [dart]=
+  [xul]=
+  [sln]=
+  [suo]=
+  [pl]=
+  [pm]=
+  [t]=
+  [rss]=
+  [f#]=
+  [fsscript]=
+  [fsx]=
+  [fs]=
+  [fsi]=
+  [rs]=
+  [rlib]=
+  [d]=
+  [erl]=
+  [hrl]=
+  [vim]=
+  [react]=
+  [puppet]=
+  [vue]=﵂
+  [elm]=
+  [swift]=
+  # [vim]=
+  # [ai]=
+  # [psd]=
+  # [psb]=
+  [ts]=
+  [tsx]=
+  [jl]=
+)
+
+for i in "${!types[@]}"
+do
+  project_types+=("${types[$i]}  $i")
+done
+
+for i in "${!languages[@]}"
+do
+  project_languages+=("${languages[$i]}  $i")
+done
+
+function devicons_get_filetype_symbol {
+
+	local filetype
+	local default=
+	local exist_check=1
+	local input=$1
+	local type="$1"
+	# using ## for possibly more than one "." (get after last one):
+	local filetype="$type"
+
+	if [ ! -z "$filetype" ] && [ ${extensions[$filetype]+$exist_check} ]; then
+		local symbol=${extensions[$filetype]}
+	else
+		local symbol=$default
+	fi
+
+	echo "$symbol"
+
+	return 0
+}
 
 vim () {
   if [ ! -z "$TMUX" ]; then
@@ -71,13 +200,13 @@ new () {
 
   elif [ -z "$TMUX" ] && [ ! -z "$1" ]; then
 
-    project_type=$(printf '%s\n' "${project_types[@]}" | fzf --prompt="  What type of project is this? " --height 30% --reverse)
+    project_type=$(printf '%s\n' "${project_types[@]}" | sort -k2 | fzf --prompt="  What type of project is this? " --height 1% --reverse | awk -F' ' '{ print $(NF) }' )
 
     if [ -z $project_type ]; then
       exit
     fi
 
-    project_language=$(printf '%s\n' "${project_languages[@]}" | fzf --prompt="  What programming language will it be in? " --height 30% --reverse)
+    project_language=$(printf '%s\n' "${project_languages[@]}" | sort -k2 | fzf --prompt="  What programming language will it be in? " --height 30% --reverse | awk -F' ' '{ print $(NF) }')
 
     if [ -z $project_language ]; then
       exit
@@ -185,7 +314,7 @@ open () {
       icons["bash"]="$"
       icons["ansible"]=""
       icons["sh"]=""
-      icons["bin"]=""
+      icons["cli"]=""
       icons["fish"]=""
       icons["ml"]="λ"
       icons["mli"]="λ"
@@ -231,10 +360,10 @@ open () {
       icons["tsx"]=""
       icons["jl"]=""
       print icons[$(NF -2)]"  "$(NF -2)" "icons[$(NF -1)]" "$(NF -1)" "$(NF) " "
-  }
+    }
   {
     addicons()
-  }' | sort | fzf --prompt="  Open Project: $dir/> " --height 30% --reverse -d" " --with-nth 1,2,4,2,6 | awk -F' ' -v dir=$dir -v slash='/' '{print dir slash $(NF -3) slash $(NF -1) slash $(NF)}')"
+  }' | sort -k5 | fzf --prompt="  Open Project: $dir/> " --height 30% --reverse -d" " --with-nth 1,2,4,2,6 | awk -F' ' -v dir=$dir -v slash='/' '{print dir slash $(NF -3) slash $(NF -1) slash $(NF)}')"
 
   if [ -z "$project_path" ]; then
     exit
