@@ -206,7 +206,7 @@ new () {
       exit
     fi
 
-    project_language=$(printf '%s\n' "${project_languages[@]}" | sort -k2 | fzf --prompt="  What programming language will it be in? " --height 30% --reverse | awk -F' ' '{ print $(NF) }')
+    project_language=$(printf '%s\n' "${project_languages[@]}" | sort -k2 | fzf --prompt="  What is the main technology used? " --height 30% --reverse | awk -F' ' '{ print $(NF) }')
 
     if [ -z $project_language ]; then
       exit
