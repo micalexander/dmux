@@ -195,7 +195,7 @@ new () {
       setw -g pane-base-index 1 \; \
       split-window -h 'dmux vim;bash -l' \; \
       split-window -v \; \
-      select-layout '6a23,198x71,0,0{39x71,0,0,0,158x71,40,0[158x45,40,0,1,158x25,40,46,2]}' \; \
+      select-layout '32f3,191x73,0,0{35x73,0,0,0,155x73,36,0[155x54,36,0,1,155x18,36,55,2]}' \; \
       select-pane -t 1
 
   elif [ -z "$TMUX" ] && [ ! -z "$1" ]; then
@@ -412,7 +412,7 @@ init () {
     new-session -c ${session_dir} -s $(basename -- ${session_name}) 'vifm -c ":only" -c "set vicmd=dmux\ vim";bash -l' \; \
     split-window -h 'dmux vim '$session_file';bash -l' \; \
     split-window -h \; \
-    select-layout '6a23,198x71,0,0{39x71,0,0,0,158x71,40,0[158x45,40,0,1,158x25,40,46,2]}' \; \
+    select-layout '32f3,191x73,0,0{35x73,0,0,0,155x73,36,0[155x54,36,0,1,155x18,36,55,2]}' \; \
     set -g base-index 1 \; \
     setw -g pane-base-index 1 \; \
     select-pane -t $session_pane \; \
