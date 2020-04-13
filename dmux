@@ -417,12 +417,14 @@ init () {
     session_dir=$(pwd)
     session_file=''
     session_pane=1
+    session_detached=""
   elif [ ! -z "$1" ] && [ -d "$1" ]; then
     session_name=$(basename -- $1)
     session_dir=${1}
     session_file=''
     session_pane=1
-    if [ ! -z "$(tmux ls | grep $session_name)" ]; then
+    session_detached=""
+    if [ ! -z "$(tmux ls 2> /dev/null | grep $session_name)" ]; then
       echo ""
       echo "  Found existing session: ${session_name}"
       echo "  Opening: ${session_name}"
@@ -441,7 +443,8 @@ init () {
     fi
     session_file=$1
     session_pane=2
-    if [ ! -z "$(tmux ls | grep $session_name)" ]; then
+    session_detached=""
+    if [ ! -z "$(tmux ls 2> /dev/null | grep $session_name)" ]; then
       echo ""
       echo "  Found existing session: ${session_name}"
       echo "  Opening: ${session_name}"
@@ -452,10 +455,18 @@ init () {
     fi
   fi
 
+  if [ ! -z "$TMUX" ]; then
+    session_connect="switch-client -t $session_name"
+  else
+    session_connect="attach -t $session_name"
+  fi
+
   tmux \
-    new-session -c ${session_dir} -s $(basename -- ${session_name}) 'vifm -c ":only" -c "set vicmd=dmux\ vim";bash -l' \; \
-    split-window -h 'dmux vim '$session_file';bash -l' \; \
-    split-window -h \; \
+    new-session -c ${session_dir} -d -s ${session_name} 'vifm -c ":only" -c "set vicmd=dmux\ vim";bash -l'
+  tmux \
+    ${session_connect} \; \
+    split-window -c ${session_dir} -h 'dmux vim '$session_file';bash -l' \; \
+    split-window -c ${session_dir} -h \; \
     select-layout '32f3,191x73,0,0{35x73,0,0,0,155x73,36,0[155x54,36,0,1,155x18,36,55,2]}' \; \
     set -g base-index 1 \; \
     setw -g pane-base-index 1 \; \
