@@ -33,10 +33,13 @@ Change the `default_projects_dir="$HOME/Cloud/Development/projects"` variable in
 `dmux [directory] # opens dmux and opens directory in vifm`<br/>
 
 #### New dmux window (inside of tmux)
-`dmux new`
+`dmux window`
 
-#### New dmux project (outside of tmux)
+#### New dmux project
 `dmux new [project_name]`
 
-#### Open a dmux project with FZF
+#### New dmux project by cloning a git repo
+`dmux clone [htts://repo.git] [project_name is optional]`
+
+#### Open a dmux project with interactivly
 `dmux open`
