@@ -268,27 +268,6 @@ do
   project_languages+=("$i")
 done
 
-function devicons_get_filetype_symbol {
-
-	local filetype
-	local default=
-	local exist_check=1
-	local input=$1
-	local type="$1"
-	# using ## for possibly more than one "." (get after last one):
-	local filetype="$type"
-
-	if [ ! -z "$filetype" ] && [ ${extensions[$filetype]+$exist_check} ]; then
-		local symbol=${extensions[$filetype]}
-	else
-		local symbol=$default
-	fi
-
-	echo "$symbol"
-
-	return 0
-}
-
 vim () {
   if [ ! -z "$TMUX" ]; then
     tmux_current_session=$(tmux display-message -p '#S')
@@ -330,22 +309,8 @@ addcolor () {
 }
 
 new () {
-  if [ ! -z "$TMUX" ]; then
+  if [ ! -z "$1" ]; then
 
-    tmux new-window 'vifm -c ":only" -c "set vicmd=dmux\ vim";bash -l' \; \
-      set -g base-index 1 \; \
-      setw -g pane-base-index 1 \; \
-      split-window -h 'dmux vim;bash -l' \; \
-      split-window -v \; \
-      select-layout '32f3,191x73,0,0{35x73,0,0,0,155x73,36,0[155x54,36,0,1,155x18,36,55,2]}' \; \
-      select-pane -t 1
-
-  elif [ -z "$TMUX" ] && [ ! -z "$1" ]; then
-    #   print color[$2]$1color["blank"]"  "$2
-    # }
-    # {
-    #   addcolor()
-    # }' | sort -k2 | fzf --ansi --prompt="  What type of project is this? " --height 1% --reverse | awk -F' ' '{ print $(NF) }' )
     project_type=$(printf "%s\n" "${project_types[@]}" | iconize_new | sort -k2 | fzf --ansi --prompt="  What type of project is this? " --height 1% --reverse | awk -F' ' '{ print $(NF) }' )
 
     if [ -z $project_type ]; then
@@ -370,19 +335,84 @@ new () {
     mkdir -p $project_path
 
     echo ""
-    echo "  Project created: ${project_path}"
-    echo "  Opening..."
+    echo "  Project created at: ${project_path}"
+    echo "  Opening session: $1"
     echo ""
     sleep 2
 
     dmux init $project_path
 
-  elif [ -z "$TMUX" ] && [ -z "$1" ]; then
+  elif [ -z "$1" ]; then
 
       echo ""
       echo "  Please provide a project name to this command e.g. dmux new [project_name]"
       echo ""
       exit
+  fi
+}
+
+clone () {
+
+  if [ ! -z "$1" ]; then
+
+    if [ ! -z "$2" ]; then
+      git_path=$2
+    else
+      git_path=$(basename $1 | cut -d . -f 1)
+    fi
+
+    project_type=$(printf "%s\n" "${project_types[@]}" | iconize_new | sort -k2 | fzf --ansi --prompt="  What type of project is this? " --height 1% --reverse | awk -F' ' '{ print $(NF) }' )
+
+    if [ -z $project_type ]; then
+      exit
+    fi
+
+    project_language=$(printf "%s\n" "${project_languages[@]}" | iconize_new | sort -k2 | fzf --ansi --prompt="  What is the main technology used? " --height 30% --reverse | awk -F' ' '{ print $(NF) }')
+
+    if [ -z $project_language ]; then
+      exit
+    fi
+
+    project_path=$default_projects_dir/$project_type/$project_language/$git_path
+
+    if [ -d "$project_path" ]; then
+      echo ""
+      echo "  Sorry the project $project_path already exists"
+      echo ""
+      exit
+    fi
+
+    mkdir -p $project_path
+
+    git clone $1 $"$project_path"
+
+    echo ""
+    echo "  Project created at: ${project_path}"
+    echo "  Opening session: $git_path"
+    echo ""
+    sleep 2
+
+    dmux init $project_path
+
+  elif [ -z "$1" ]; then
+
+      echo ""
+      echo "  Please provide a project name to this command e.g. dmux clone [repo] [project_name]"
+      echo ""
+      exit
+  fi
+
+}
+
+window () {
+  if [ ! -z "$TMUX" ]; then
+    tmux new-window 'vifm -c ":only" -c "set vicmd=dmux\ vim";bash -l' \; \
+      set -g base-index 1 \; \
+      setw -g pane-base-index 1 \; \
+      split-window -h 'dmux vim;bash -l' \; \
+      split-window -v \; \
+      select-layout '32f3,191x73,0,0{35x73,0,0,0,155x73,36,0[155x54,36,0,1,155x18,36,55,2]}' \; \
+      select-pane -t 1
   fi
 }
 
@@ -429,7 +459,7 @@ init () {
       echo "  Found existing session: ${session_name}"
       echo "  Opening: ${session_name}"
       echo ""
-      sleep 5
+      sleep 2
       tmux a -t ${session_name}
       exit
     fi
@@ -449,7 +479,7 @@ init () {
       echo "  Found existing session: ${session_name}"
       echo "  Opening: ${session_name}"
       echo ""
-      sleep 5
+      sleep 2
       tmux a -t ${session_name}
       exit
     fi
