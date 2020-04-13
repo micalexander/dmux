@@ -535,7 +535,10 @@ else
   elif [[ -f "${1}" ]] || [[ -d "${1}" ]]; then
     init $1
   else
-    echo "'$1' is not a known function name" >&2
+    echo ""
+    echo "  Can't find a file or directory named \"$1\" is not a known function name" >&2
+    echo "  and \"$1\" is not a known function name" >&2
+    echo ""
     exit 1
   fi
 fi
