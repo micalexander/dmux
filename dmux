@@ -20,6 +20,32 @@ fi
 
 default_projects_dir="$HOME/Cloud/Development/projects"
 
+fzf_height=$(test -z "$TMUX" && echo '--height 30%' || echo '--height 100%')
+fzf_opts="
+ --ansi ${fzf_height} --no-border --reverse --header ..
+ --margin 0,1,1,1
+ --color=dark
+ --color=fg:#d0d0d0,bg:#282c34,hl:#5f87af
+ --color=fg+:#d0d0d0,bg+:#282c34,hl+:#5fd7ff
+ --color=info:#d7005f,prompt:#c678dd,pointer:#af5fff
+ --color=header:#282c34,gutter:#282c34
+ --color=marker:#87ff00,spinner:#af5fff"
+
+get_reply () {
+
+  prompt=$1
+
+  set -o emacs
+  bind '"\C-w": kill-whole-line'
+  bind '"\e": "\C-w\C-d"'
+  bind '"\e\e": "\C-w\C-d"'
+  IFS= read -rep "  $(addc 'magenta' "$1") " || {
+    read -st 1 -n 1000000
+      exit 1
+    }
+  echo $REPLY
+}
+
 declare -A fgcolor=(
   [none]=0
   [black]=30
@@ -300,6 +326,13 @@ iconize_new () {
   done
 }
 
+addc () {
+
+  prefix="\033["
+  suffix="m"
+
+  echo -e "$prefix${fgcolor[$1]}$suffix$2$prefix${fgcolor[none]}$suffix"
+}
 addcolor () {
 
   prefix="\033["
@@ -308,22 +341,162 @@ addcolor () {
   echo -e "$prefix${fgcolor[${colormap[$2]}]}$suffix$1$prefix${fgcolor[none]}$suffix"
 }
 
-new () {
-  if [ ! -z "$1" ]; then
+sessions () {
+  sessions=($(echo $(tmux list-sessions -F '#S')))
+  current_session=$(tmux display-message -p '#S')
+  last_session=$(tmux display-message -p '#{client_last_session}')
 
-    project_type=$(printf "%s\n" "${project_types[@]}" | iconize_new | sort -k2 | fzf --ansi --prompt="  What type of project is this? " --height 1% --reverse | awk -F' ' '{ print $(NF) }' )
+  for i in "${!sessions[@]}"; do
+    if [[ "${sessions[$i]}" = "${last_session}" ]]; then
+      last_session_index="${i}"
+    fi
+  done
+  new_session_list=($last_session)
+  unset sessions[$last_session_index]
+  for i in "${!sessions[@]}"; do
+    new_session_list+=(${sessions[$i]})
+  done
+
+  session=$(printf "%s\n" ${new_session_list[@]} | fzf ${fzf_opts} --prompt=" Sessions: ")
+
+  if [[ "${new_session_list[@]}" =~ "${session}" ]]; then
+    tmux switch-client -t $session
+  fi
+}
+
+session_close () {
+
+  tmux_current_session=$(tmux display-message -p '#S')
+  sessions=($(echo $(tmux list-sessions -F '#S')))
+  sessions_length=${#sessions[@]}
+  confirm=$(get_reply 'Close current session "'$tmux_current_session'"?')
+
+  if [ "$sessions_length" -gt 1 ]; then
+    if [ "$confirm" = "yes" ]; then
+      tmux switch-client -p \; kill-session -t $tmux_current_session
+    fi
+  else
+    if [ "$confirm" = "yes" ]; then
+      tmux kill-session -t $tmux_current_session
+    fi
+  fi
+}
+
+sessions_status_line () {
+  sessions=($(echo $(tmux list-sessions -F '#S')))
+  current_session=$(tmux display-message -p '#S')
+
+  for i in "${!sessions[@]}"; do
+    if [[ "${sessions[$i]}" = "${current_session}" ]]; then
+      current_session_index="${i}"
+    fi
+  done
+
+  sessions_length=${#sessions[@]}
+  sessions_last_index=$((${sessions_length} - 1))
+  sessions_second_to_last_index=$((${sessions_last_index} - 1))
+  session_before_current_index=$((${current_session_index} - 1))
+  session_after_current_index=$((${current_session_index} + 1))
+
+  if [ "$current_session_index" = "0" ]; then
+    previous_session_index=${sessions_last_index}
+    previous_previous_session_index=$((${sessions_last_index} - 1))
+  else
+    previous_session_index=${session_before_current_index}
+    if [ "$previous_session_index" = "0" ]; then
+      previous_previous_session_index=${sessions_last_index}
+    else
+      previous_previous_session_index=$((${session_before_current_index} - 1))
+    fi
+  fi
+
+  if [ "$current_session_index" = "$sessions_last_index" ]; then
+    next_session_index=0
+    next_next_session_index=1
+  else
+    next_session_index=$session_after_current_index
+    if [ "$next_session_index" = "$sessions_last_index" ]; then
+      next_next_session_index=0
+    else
+      next_next_session_index=$((${session_after_current_index} + 1))
+    fi
+  fi
+
+  position1=" ${sessions[$previous_previous_session_index]}"
+  position2=" ${sessions[$previous_session_index]}"
+  position3="${sessions[$next_session_index]}  "
+  position4="${sessions[$next_next_session_index]} "
+
+  center_text="$current_session  $sessions_length"
+  # center_text=""
+
+  color_text="#abb2bf"
+  color_green="green"
+  color_black="black"
+  color_gray="#3b4048"
+  color_none="#2c323c"
+  color_center_end="green"
+  color_center_end_left="$color_green"
+  color_center_end_right="$color_green"
+  color_position2_end_left="$color_gray"
+  color_position3_end_right="$color_gray"
+
+  if [ "$sessions_length" = 1 ]; then
+    position1="..."
+    position2="..."
+    position3="..."
+    position4="..."
+    color_gray="black"
+    color_center_end_left="$color_none"
+    color_center_end_right="$color_black"
+  fi
+  if [ "$sessions_length" = 2 ] || [ "$sessions_length" = 3 ]; then
+    color_position2_end_left="$color_none"
+    color_position3_end_right="$color_green"
+  fi
+
+#[fg=${color_gray},bg=#98c379]#[fg=${color_gray},bg=${color_gray},nobold,nounderscore,noitalics]
+position1_wrapper="#[fg=${color_gray},bg=#2c323c,nobold,nounderscore,noitalics]#[fg=${color_text},bg=${color_gray}] ${position1} "
+position2_wrapper="#[fg=${color_green},bg=${color_position2_end_left}]#[fg=${color_black},bg=${color_green}] ${position2} "
+center_piece_wrapper="#[fg=${color_black},bg=${color_center_end_left},nobold,nounderscore,noitalics]#[fg=${color_black},bg=#98c379,nobold,nounderscore,noitalics]#[fg=${color_green},bg=${color_black},nobold,nounderscore,noitalics] ${center_text} #[fg=#abb2bf,bg=${color_gray}]#[fg=${color_black},bg=${color_center_end_right},nobold,nounderscore,noitalics]"
+position3_wrapper=" ${position3}#[fg=${color_green},bg=${color_position3_end_right}]"
+position4_wrapper="#[fg=${color_text},bg=${color_gray}] ${position4} "
+
+if [ "$sessions_length" = 1 ]; then
+  position1_wrapper=""
+  position2_wrapper=""
+  position3_wrapper=""
+  position4_wrapper=""
+fi
+if [ "$sessions_length" = 2 ] || [ "$sessions_length" = 3 ]; then
+  position1_wrapper=""
+  position4_wrapper=""
+
+fi
+
+echo "$position1_wrapper$position2_wrapper$center_piece_wrapper$position3_wrapper$position4_wrapper"
+
+}
+
+new () {
+
+  project=$(get_reply 'New project name:')
+
+  if [ ! -z "$project" ]; then
+
+    project_type=$(printf "%s\n" "${project_types[@]}" | iconize_new | sort -k2 | fzf ${fzf_opts} --prompt=" Project type: " | awk -F' ' '{ print $(NF) }' )
 
     if [ -z $project_type ]; then
       exit
     fi
 
-    project_language=$(printf "%s\n" "${project_languages[@]}" | iconize_new | sort -k2 | fzf --ansi --prompt="  What is the main technology used? " --height 30% --reverse | awk -F' ' '{ print $(NF) }')
+    project_language=$(printf "%s\n" "${project_languages[@]}" | iconize_new | sort -k2 | fzf ${fzf_opts} --prompt=" Project language: "  | awk -F' ' '{ print $(NF) }')
 
     if [ -z $project_language ]; then
       exit
     fi
 
-    project_path=$default_projects_dir/$project_type/$project_language/$1
+    project_path=$default_projects_dir/$project_type/$project_language/$project
 
     if [ -d "$project_path" ]; then
       echo ""
@@ -336,38 +509,52 @@ new () {
 
     echo ""
     echo "  Project created at: ${project_path}"
-    echo "  Opening session: $1"
+    echo "  Opening session: $project"
     echo ""
     sleep 2
 
     dmux init $project_path
 
-  elif [ -z "$1" ]; then
+  elif [ -z "$project" ]; then
 
       echo ""
       echo "  Please provide a project name to this command e.g. dmux new [project_name]"
       echo ""
       exit
   fi
+  sleep 2
+  exit
 }
 
 clone () {
 
-  if [ ! -z "$1" ]; then
+  set -o emacs
+  bind '"\C-w": kill-whole-line'
+  bind '"\e": "\C-w\C-d"'
+  bind '"\e\e": "\C-w\C-d"'
+  IFS= read -rep "  $(addc 'magenta' 'Clone repo url:') " || {
+    read -st 1 -n 1000000
+      exit 1
+    }
 
-    if [ ! -z "$2" ]; then
-      git_path=$2
+  repo=$(echo $REPLY | awk -F' ' '{print $1}')
+  repo_dir=$(echo $REPLY | awk -F' ' '{print $2}')
+
+  if [ ! -z "$repo" ]; then
+
+    if [ ! -z "$repo_dir" ]; then
+      git_path=$repo_dir
     else
-      git_path=$(basename $1 | cut -d . -f 1)
+      git_path=$(basename $repo | cut -d . -f 1)
     fi
 
-    project_type=$(printf "%s\n" "${project_types[@]}" | iconize_new | sort -k2 | fzf --ansi --prompt="  What type of project is this? " --height 1% --reverse | awk -F' ' '{ print $(NF) }' )
+    project_type=$(printf "%s\n" "${project_types[@]}" | iconize_new | sort -k2 | fzf ${fzf_opts} --prompt=" Project type: " | awk -F' ' '{ print $(NF) }' )
 
     if [ -z $project_type ]; then
       exit
     fi
 
-    project_language=$(printf "%s\n" "${project_languages[@]}" | iconize_new | sort -k2 | fzf --ansi --prompt="  What is the main technology used? " --height 30% --reverse | awk -F' ' '{ print $(NF) }')
+    project_language=$(printf "%s\n" "${project_languages[@]}" | iconize_new | sort -k2 | fzf ${fzf_opts} --prompt=" Project language: " | awk -F' ' '{ print $(NF) }')
 
     if [ -z $project_language ]; then
       exit
@@ -384,7 +571,7 @@ clone () {
 
     mkdir -p $project_path
 
-    git clone $1 $"$project_path"
+    git clone $repo $"$project_path"
 
     echo ""
     echo "  Project created at: ${project_path}"
@@ -394,7 +581,7 @@ clone () {
 
     dmux init $project_path
 
-  elif [ -z "$1" ]; then
+  elif [ -z "$repo" ]; then
 
       echo ""
       echo "  Please provide a project name to this command e.g. dmux clone [repo] [project_name]"
@@ -432,7 +619,7 @@ open () {
     dir=$1
   fi
 
-  project_path="$(fd . $dir/**/* --type d -d 1 | iconize_open | sort -k5 | fzf --ansi --prompt="  Open Project: $dir/> " --height 30% --reverse -d" " --with-nth 1,2,4,2,6 | awk -F' ' -v dir=$dir -v slash='/' '{print dir slash $(NF -3) slash $(NF -1) slash $(NF)}')"
+  project_path="$(fd . $dir/**/* --type d -d 1 | iconize_open | sort -k5 | fzf ${fzf_opts} --prompt=" Open Project: " -d" " --with-nth="1,4,6" | awk -F' ' -v dir=$dir -v slash='/' '{print dir slash $(NF -3) slash $(NF -1) slash $(NF)}')"
 
   if [ -z "$project_path" ]; then
     exit
@@ -460,7 +647,11 @@ init () {
       echo "  Opening: ${session_name}"
       echo ""
       sleep 2
-      tmux a -t ${session_name}
+      if [ ! -z "$TMUX" ]; then
+        tmux a -t ${session_name}
+      else
+        tmux switch-client -t $session
+      fi
       exit
     fi
   elif [ ! -z "$1" ] && [ ! -d "$1" ] && [ -f "$1" ]; then
@@ -488,7 +679,8 @@ init () {
   if [ ! -z "$TMUX" ]; then
     session_connect="switch-client -t $session_name"
   else
-    session_connect="attach -t $session_name"
+
+      session_connect="attach -t $session_name"
   fi
 
   tmux \
