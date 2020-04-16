@@ -507,13 +507,19 @@ echo "$position1_wrapper$position2_wrapper$center_piece_wrapper$position3_wrappe
 }
 
 status_left () {
-  windows_current=$(tmux display-message -p "#I")
-  if [ "$windows_current" = 1 ]; then
-    echo "#[fg=#2c323c,bg=#98c379,none] 缾#{session_windows} #[fg=#98c379,bg=#2c323c,nobold,nounderscore,noitalics]"
+  windows=($(echo $(tmux list-windows -F '#W')))
+  if [ "${#windows[@]}" = 1 ]; then
+    echo "#[fg=#2c323c,bg=#98c379,none]  #{session_windows} "
   else
-    echo "#[fg=#2c323c,bg=#98c379,none] 缾#{session_windows} #[fg=#98c379,bg=#2c323c,nobold,nounderscore,noitalics]"
+    windows_current=$(tmux display-message -p "#I")
+    if [ "$windows_current" = 1 ]; then
+      echo "#[fg=#2c323c,bg=#98c379,none]  #{session_windows} #[fg=#98c379,bg=#2c323c,nobold,nounderscore,noitalics]"
+    else
+      echo "#[fg=#2c323c,bg=#98c379,none]  #{session_windows} #[fg=#98c379,bg=#2c323c,nobold,nounderscore,noitalics]"
+    fi
   fi
 }
+
 status_window () {
   windows_current=$(tmux display-message -p "#I")
   if [ "$windows_current" = 1 ]; then
