@@ -382,7 +382,25 @@ session_close () {
   fi
 }
 
+get_vim_buffer () {
+  session_name=$1
+  position=$2
+  if [ ! -z "$session_name" ]; then
+    buffer=$(nvr --servername /tmp/tmux-${1}-1-2-nvimsocket --remote-expr 'bufname("")')
+    if [ ! -z "$buffer" ]; then
+      if [ "$position" = "1" ] ||  [ "$position" = "2" ]; then
+        echo "$(basename ${buffer})  $session_name"
+      else
+        echo "$session_name  $(basename ${buffer})"
+      fi
+    else
+      echo $session_name
+    fi
+  fi
+}
+
 sessions_status_line () {
+
   sessions=($(echo $(tmux list-sessions -F '#S')))
   current_session=$(tmux display-message -p '#S')
 
@@ -422,12 +440,14 @@ sessions_status_line () {
     fi
   fi
 
-  position1=" ${sessions[$previous_previous_session_index]}"
-  position2=" ${sessions[$previous_session_index]}"
-  position3="${sessions[$next_session_index]}  "
-  position4="${sessions[$next_next_session_index]} "
 
-  center_text="$current_session  $sessions_length"
+  position1="$(get_vim_buffer ${sessions[$previous_previous_session_index]} 1)"
+  position2="$(get_vim_buffer ${sessions[$previous_session_index]} 2)"
+  position3="$(get_vim_buffer ${sessions[$next_session_index]} 3)"
+  position4="$(get_vim_buffer ${sessions[$next_next_session_index]} 4)"
+  position5=" $sessions_length"
+
+  center_text="$current_session"
   # center_text=""
 
   color_text="#abb2bf"
@@ -435,32 +455,40 @@ sessions_status_line () {
   color_black="black"
   color_gray="#3b4048"
   color_none="#2c323c"
+  color_white="white"
   color_center_end="green"
-  color_center_end_left="$color_green"
-  color_center_end_right="$color_green"
-  color_position2_end_left="$color_gray"
+  color_center_end_left="$color_none"
+  color_center_end_right="$color_none"
+  color_position2_end_left="$color_none"
   color_position3_end_right="$color_gray"
 
   if [ "$sessions_length" = 1 ]; then
-    position1="..."
-    position2="..."
-    position3="..."
-    position4="..."
     color_gray="black"
     color_center_end_left="$color_none"
-    color_center_end_right="$color_black"
-  fi
-  if [ "$sessions_length" = 2 ] || [ "$sessions_length" = 3 ]; then
-    color_position2_end_left="$color_none"
-    color_position3_end_right="$color_green"
+    color_center_end_left_left="$color_none"
+    color_center_end_right="$color_none"
+    showcenterright=""
+    show4left=""
+    show5left=""
+  else
+    color_center_end_left_left="$color_gray"
+    showcenterright="#[fg=${color_green},bg=${color_center_end_right},nobold,nounderscore,noitalics]#[fg=${color_none},bg=${color_gray}]"
+    show5left="#[fg=#2c323c,bg=green] "
+    show4left="#[fg=#2c323c,bg=green]"
   fi
 
-#[fg=${color_gray},bg=#98c379]#[fg=${color_gray},bg=${color_gray},nobold,nounderscore,noitalics]
-position1_wrapper="#[fg=${color_gray},bg=#2c323c,nobold,nounderscore,noitalics]#[fg=${color_text},bg=${color_gray}] ${position1} "
-position2_wrapper="#[fg=${color_green},bg=${color_position2_end_left}]#[fg=${color_black},bg=${color_green}] ${position2} "
-center_piece_wrapper="#[fg=${color_black},bg=${color_center_end_left},nobold,nounderscore,noitalics]#[fg=${color_black},bg=#98c379,nobold,nounderscore,noitalics]#[fg=${color_green},bg=${color_black},nobold,nounderscore,noitalics] ${center_text} #[fg=#abb2bf,bg=${color_gray}]#[fg=${color_black},bg=${color_center_end_right},nobold,nounderscore,noitalics]"
-position3_wrapper=" ${position3}#[fg=${color_green},bg=${color_position3_end_right}]"
-position4_wrapper="#[fg=${color_text},bg=${color_gray}] ${position4} "
+  if [ "$sessions_length" = 2 ] || [ "$sessions_length" = 3 ]; then
+    color_position2_end_left="$color_none"
+    color_position3_end_right="$color_gray"
+  fi
+
+position1_wrapper="#[fg=${color_none},bg=#2c323c,nobold,nounderscore,noitalics]#[fg=${color_text},bg=${color_none}] ${position1} "
+position2_wrapper="#[fg=${color_gray},bg=${color_position2_end_left}]#[fg=${color_text},bg=${color_gray}] ${position2} "
+center_piece_wrapper="#[fg=${color_none},bg=${color_center_end_left_left}]#[fg=${color_green},bg=${color_center_end_left},nobold,nounderscore,noitalics]#[fg=${color_green},bg=#98c379,nobold,nounderscore,noitalics]#[fg=${color_black},bg=${color_green},nobold,nounderscore,noitalics] ${center_text} #[fg=#abb2bf,bg=${color_gray}]${showcenterright}"
+position3_wrapper="#[fg=${color_text},bg=${color_position3_end_right}] ${position3} #[fg=${color_gray},bg=${color_none},nobold,nounderscore,noitalics]"
+position4_wrapper="#[fg=${color_text},bg=${color_none}] ${position4} "
+time="  $(date +" %b %d %Y   %T")"
+position5_wrapper="${show5left}#[fg=black,bg=green]${position5}  ﲾ $(tmux-mem-cpu-load -m 2 -a 0 --interval 2) "
 
 if [ "$sessions_length" = 1 ]; then
   position1_wrapper=""
@@ -474,8 +502,25 @@ if [ "$sessions_length" = 2 ] || [ "$sessions_length" = 3 ]; then
 
 fi
 
-echo "$position1_wrapper$position2_wrapper$center_piece_wrapper$position3_wrapper$position4_wrapper"
+echo "$position1_wrapper$position2_wrapper$center_piece_wrapper$position3_wrapper$position4_wrapper$position5_wrapper"
 
+}
+
+status_left () {
+  windows_current=$(tmux display-message -p "#I")
+  if [ "$windows_current" = 1 ]; then
+    echo "#[fg=#2c323c,bg=#98c379,none] 缾#{session_windows} #[fg=#98c379,bg=#2c323c,nobold,nounderscore,noitalics]"
+  else
+    echo "#[fg=#2c323c,bg=#98c379,none] 缾#{session_windows} #[fg=#98c379,bg=#2c323c,nobold,nounderscore,noitalics]"
+  fi
+}
+status_window () {
+  windows_current=$(tmux display-message -p "#I")
+  if [ "$windows_current" = 1 ]; then
+    echo "#[fg=black,bg=green,none]#[fg=black,bg=green,none] #F #W #[fg=green,bg=#2c323c]"
+  else
+    echo "#[fg=black,bg=green,none] #F #W #[fg=green,bg=#2c323c]"
+  fi
 }
 
 new () {
@@ -648,9 +693,9 @@ init () {
       echo ""
       sleep 2
       if [ ! -z "$TMUX" ]; then
-        tmux a -t ${session_name}
+        tmux switch-client -t $session_name
       else
-        tmux switch-client -t $session
+        tmux a -t ${session_name}
       fi
       exit
     fi
@@ -671,7 +716,11 @@ init () {
       echo "  Opening: ${session_name}"
       echo ""
       sleep 2
-      tmux a -t ${session_name}
+      if [ ! -z "$TMUX" ]; then
+        tmux switch-client -t $session_name
+      else
+        tmux a -t ${session_name}
+      fi
       exit
     fi
   fi
