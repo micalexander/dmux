@@ -296,24 +296,20 @@ done
 
 vim () {
   if [ ! -z "$TMUX" ]; then
-    tmux_current_session=$(tmux display-message -p '#S')
-    tmux_current_window=$(tmux display-message -p '#I')
-    tmux_current_pane=2
-    tmux_nvim_socket=$(ls /tmp/ | grep ".*tmux-${tmux_current_session}-${tmux_current_window}-[1-9]-nvimsocket")
+    current_session=$(tmux display-message -p '#S')
+    current_window=$(tmux display-message -p '#I')
+    current_session_window=tmux-$current_session-$current_window
+    target_pane=$(tmux display-message -p '#P')
+    nvim_socket=$(find /tmp/* -type s -regex ".*$current_session_window-[1-9]-nvimsocket")
 
-    if [[ $tmux_nvim_socket =~ ^tmux-${tmux_current_session}-(${tmux_current_window})-([1-9])-nvimsocket ]]; then
-      tmux_target_pane=${BASH_REMATCH[2]}
+    # Check to see if there is a socker for the current session
+    if [ -z "$tmux_nvim_socket" ]; then
+      # Open vim in current pane
+      NVIM_LISTEN_ADDRESS=/tmp/$current_session_window-$target_pane-nvimsocket nvim "$@"
     else
-      tmux_target_pane=0
-    fi
-
-    nvim_remote_tmux_socket=/tmp/$tmux_nvim_socket
-
-    if [ -S "/tmp/$tmux_nvim_socket" ] && [ $tmux_target_pane != 0 ]; then
-      tmux select-pane -t $tmux_target_pane | nvr --servername $nvim_remote_tmux_socket "$@"
-    else
-      tmux_current_pane=2
-      NVIM_LISTEN_ADDRESS=/tmp/tmux-$tmux_current_session-$tmux_current_window-$tmux_current_pane-nvimsocket nvim "$@"
+      # Open file in vim from another pane
+      target_pane=$(echo $nvim_socket | awk -F'-' '{print $(NF -1)}')
+      tmux select-pane -t $target_pane \; run-shell "nvr --servername $nvim_socket "$@""
     fi
   else
     NVIM_LISTEN_ADDRESS=/tmp/nvimsocket nvim "$@"
@@ -339,6 +335,31 @@ addcolor () {
   suffix="m"
 
   echo -e "$prefix${fgcolor[${colormap[$2]}]}$suffix$1$prefix${fgcolor[none]}$suffix"
+}
+
+windows () {
+  windows=($(echo $(tmux list-windows -F '#I')))
+  echo $windows
+  exit
+  current_session=$(tmux display-message -p '#I')
+  last_session=$(tmux display-message -p '#{last_window}')
+
+  for i in "${!sessions[@]}"; do
+    if [[ "${sessions[$i]}" = "${last_session}" ]]; then
+      last_session_index="${i}"
+    fi
+  done
+  new_session_list=($last_session)
+  unset sessions[$last_session_index]
+  for i in "${!sessions[@]}"; do
+    new_session_list+=(${sessions[$i]})
+  done
+
+  session=$(printf "%s\n" ${new_session_list[@]} | fzf ${fzf_opts} --prompt=" Sessions: ")
+
+  if [[ "${new_session_list[@]}" =~ "${session}" ]]; then
+    tmux switch-client -t $session
+  fi
 }
 
 sessions () {
@@ -386,7 +407,7 @@ get_vim_buffer () {
   session_name=$1
   position=$2
   if [ ! -z "$session_name" ]; then
-    buffer=$(nvr --servername /tmp/tmux-${1}-1-2-nvimsocket --remote-expr 'bufname("")')
+    buffer=$(nvr --servername /tmp/tmux-${1}-1-2-nvimsocket --nostart --remote-expr 'bufname("")')
     if [ ! -z "$buffer" ]; then
       if [ "$position" = "1" ] ||  [ "$position" = "2" ]; then
         echo "$(basename ${buffer})  $session_name"
@@ -739,14 +760,16 @@ init () {
   fi
 
   tmux \
-    new-session -c ${session_dir} -d -s ${session_name} 'vifm -c ":only" -c "set vicmd=dmux\ vim";bash -l'
+    new-session -c ${session_dir} -d -s ${session_name}
   tmux \
     ${session_connect} \; \
-    split-window -c ${session_dir} -h 'dmux vim '$session_file';bash -l' \; \
+    split-window -c ${session_dir} -h \; \
     split-window -c ${session_dir} -h \; \
     select-layout '32f3,191x73,0,0{35x73,0,0,0,155x73,36,0[155x54,36,0,1,155x18,36,55,2]}' \; \
     set -g base-index 1 \; \
     setw -g pane-base-index 1 \; \
+    send-keys -t 1 'difm' Enter \; \
+    send-keys -t 2 'dmux vim' Enter \; \
     select-pane -t $session_pane \; \
     set -g status-keys vi \; \
     set -g history-limit 10000 \; \
@@ -764,7 +787,7 @@ init () {
     bind-key v split-window -h \; \
     bind-key s split-window -v \; \
     bind-key e run-shell 'dmux new' \; \
-    bind-key -n C-z select-pane -t 2 \\\; resize-pane -Z \; \
+    bind-key -n M-z select-pane -t 2 \\\; resize-pane -Z \; \
     bind-key -n C-q kill-session \; \
     bind-key -n S-Down select-pane -t 3 \\\; break-pane -d -n _terminal_pane \; \
     bind-key -n S-Up select-pane -t 2 \\\; join-pane -s $.1 -l 10
@@ -789,3 +812,4 @@ else
     exit 1
   fi
 fi
+
