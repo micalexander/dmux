@@ -20,8 +20,10 @@ Place the dmux file in your PATH and make sure it is excutable `chmod +x dmux`
 Add an alias to replace neovim of vim in your `~/.bashrc` file: 
 ```
 alias vim='dmux vim'
+alias vifm='dmux vifm'
+
 ```
-*This way vim will continue to work the same when not in dmux*
+*This way vim and vifm will continue to work the same when not in dmux*
 
 #### Step three
 Add the following lines to the top your `.tmux.conf` file
