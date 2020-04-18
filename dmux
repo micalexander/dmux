@@ -6,8 +6,6 @@ declare -A executables=(
   [vifm]=vifm
   [nvim]=neovim
   [nvr]=neovim-remote
-  [nvrs]=neovim-remotes
-  [nvrss]=neovi-remotes
 )
 
 executables_found=($(which ${!executables[@]} | awk -F'/' '{print $(NF)}'))
