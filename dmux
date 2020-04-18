@@ -111,7 +111,18 @@ setw -g window-status-format "#[fg=#2c323c,bg=#3b4048]#[fg=#abb2bf,bg=#3b4048
 EOF
 fi
 
-default_projects_dir="$HOME/Cloud/Development/projects"
+if [ -z "$DMUX_PROJECTS" ]; then
+  echo ""
+  echo "  Please specify the directory you want your projects to be stored in"
+  echo "  by adding the environment variable as show in the example below"
+  echo "  to you bashrc."
+  echo ""
+  echo "  export DMUX_PROJECTS=$HOME/Cloud/Development/projects"
+  echo ""
+  exit
+fi
+
+default_projects_dir="$DMUX_PROJECTS"
 
 fzf_height=$(test -z "$TMUX" && echo '--height 30%' || echo '--height 100%')
 fzf_opts="
