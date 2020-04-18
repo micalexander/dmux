@@ -1,20 +1,33 @@
 #!/usr/bin/env bash
-if [ -z $(which tmux) ] || [ -z $(which fzf) ] || [ -z $(which fd) ] || [ -z $(which vifm) ] || [ -z $(which nvim) ] || [ -z $(which nvr) ]; then
+declare -A executables=(
+  [tmux]=tmux
+  [fzf]=fzf
+  [fd]=fd
+  [vifm]=vifm
+  [nvim]=neovim
+  [nvr]=neovim-remote
+  [nvrs]=neovim-remotes
+  [nvrss]=neovi-remotes
+)
+
+executables_found=($(which ${!executables[@]} | awk -F'/' '{print $(NF)}'))
+executables_needed=()
+for i in "${!executables[@]}"; do
+  if [[ ! "${executables_found[@]}" =~ "${i}" ]]; then
+    executables_needed+=(${executables[$i]})
+  fi
+done
+
+if [[ ! -z "${executables_needed[@]}" ]]; then
   echo ""
-  echo "  Please be sure that the following programs are installed:"
+  echo "  Please be sure that the missing programs are installed:"
   echo ""
-  echo "  - tmux"
-  echo "  - vifm"
-  echo "  - neovim"
-  echo "  - neovim-remote"
-  echo "  - fzf"
-  echo "  - fd"
+  printf '  - %s \n' "${executables_needed[@]}"
   echo ""
-  echo "  ***MacOs Install***"
+  echo "  Example:"
   echo ""
-  echo "  brew install tmux vifm neovim fzf fd"
-  echo "  pip3 neovim-remote"
-  echo ""
+  echo "  $ brew install tmux vifm neovim fzf fd # Only need to install what you are missing"
+  echo "  $ pip3 neovim-remote # Only need to install what you are missing"
   exit
 fi
 
