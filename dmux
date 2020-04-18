@@ -409,11 +409,7 @@ vim () {
     current_session=$(tmux display-message -p '#S')
     current_window=$(tmux display-message -p '#I')
     current_session_window=tmux-$current_session-$current_window
-    if [ ! -z "$1" ]; then
-      target_pane=$1
-    else
-      target_pane=$(tmux display-message -p '#P')
-    fi
+    target_pane=$(tmux display-message -p '#P')
     nvim_socket=$(find /tmp/* -type s -regex ".*$current_session_window-[1-9]-nvimsocket")
 
     # Check to see if there is a socker for the current session
@@ -435,11 +431,10 @@ vifm () {
     current_session=$(tmux display-message -p '#S')
     current_window=$(tmux display-message -p '#I')
     current_session_window=tmux-$current_session-$current_window
-    if [ ! -z "$1" ]; then
-      target_pane=$1
-    else
-      target_pane=$(tmux display-message -p '#P')
-    fi
+    # target_pane=$(tmux display-message -p '#P')
+    # hard coding till I can find a way to open vifm in a pane and
+    # it keep the pane id or waits till it is open to coninue
+    target_pane=1
     servername="$current_session_window-$target_pane-vifm"
 
     command vifm --server-name ${servername} -c ":only" -c "set vicmd=dmux\ vim"
@@ -899,10 +894,10 @@ init () {
     split-window -c ${session_dir} -h \; \
     split-window -c ${session_dir} -h \; \
     select-layout "${layout}" \; \
-    send-keys -t 1 'dmux vifm 1' Enter \; \
-    select-pane -t 2 \; \
-    send-keys -t 2 'dmux vim ' Enter
-    # select-pane -t $session_pane
+    send-keys -t 1 'dmux vifm' Enter \; \
+    select-pane -t 1 \; \
+    send-keys -t 2 'dmux vim' Enter \; \
+    select-pane -t 2
     # bind-key -n S-Down select-pane -t 3 \\\; break-pane -d -n _terminal_pane \; \
     # bind-key -n S-Up select-pane -t 2 \\\; join-pane -s $.1 -l 10
 }
