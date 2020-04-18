@@ -409,7 +409,11 @@ vim () {
     current_session=$(tmux display-message -p '#S')
     current_window=$(tmux display-message -p '#I')
     current_session_window=tmux-$current_session-$current_window
-    target_pane=$(tmux display-message -p '#P')
+    if [ ! -z "$1" ]; then
+      target_pane=$1
+    else
+      target_pane=$(tmux display-message -p '#P')
+    fi
     nvim_socket=$(find /tmp/* -type s -regex ".*$current_session_window-[1-9]-nvimsocket")
 
     # Check to see if there is a socker for the current session
@@ -424,6 +428,25 @@ vim () {
   else
     NVIM_LISTEN_ADDRESS=/tmp/nvimsocket nvim "$@"
   fi
+}
+
+vifm () {
+  if [ ! -z "$TMUX" ]; then
+    current_session=$(tmux display-message -p '#S')
+    current_window=$(tmux display-message -p '#I')
+    current_session_window=tmux-$current_session-$current_window
+    if [ ! -z "$1" ]; then
+      target_pane=$1
+    else
+      target_pane=$(tmux display-message -p '#P')
+    fi
+    servername="$current_session_window-$target_pane-vifm"
+
+    command vifm --server-name ${servername} -c ":only" -c "set vicmd=dmux\ vim"
+  else
+    command vifm -c ":only" -c "set vicmd=dmux\ vim"
+  fi
+
 }
 
 iconize_new () {
@@ -876,7 +899,7 @@ init () {
     split-window -c ${session_dir} -h \; \
     split-window -c ${session_dir} -h \; \
     select-layout "${layout}" \; \
-    send-keys -t 1 'difm' Enter \; \
+    send-keys -t 1 'dmux vifm 1' Enter \; \
     select-pane -t 2 \; \
     send-keys -t 2 'dmux vim ' Enter
     # select-pane -t $session_pane
