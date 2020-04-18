@@ -62,8 +62,9 @@ bind -n M-o split-window -t 2 -l 10 -b -v 'dmux open'
 bind -n M-n split-window -t 2 -l 10 -b -v 'dmux new'
 bind -n M-c split-window -t 2 -l 10 -b -v 'dmux clone'
 bind -n M-s split-window -t 2 -l 10 -b -v 'dmux sessions'
-bind -n M-q split-window -t 2 -l 3 -b -v 'dmux session_close'
+bind -n M-q split-window -t 2 -l 3 -b -v 'dmux session_quit'
 bind -n C-w run-shell 'dmux window'
+bind -n C-q run-shell 'dmux window_quit'
 bind -n M-r select-layout '32f3,191x73,0,0{35x73,0,0,0,155x73,36,0[155x54,36,0,1,155x18,36,55,2]}'
 
 set -g status-right "#(dmux sessions_status_line) #[fg=black,bg=green] "
@@ -124,7 +125,7 @@ fi
 
 default_projects_dir="$DMUX_PROJECTS"
 if [ -z "$DMUX_LAYOUT" ]; then
-  layout='32f3,191x73,0,0{35x73,0,0,0,155x73,36,0[155x54,36,0,1,155x18,36,55,2]}'
+ layout='32f3,191x73,0,0{35x73,0,0,0,155x73,36,0[155x54,36,0,1,155x18,36,55,2]}'
 else
   layout=$DMUX_LAYOUT
 fi
@@ -446,31 +447,6 @@ addcolor () {
   echo -e "$prefix${fgcolor[${colormap[$2]}]}$suffix$1$prefix${fgcolor[none]}$suffix"
 }
 
-windows () {
-  windows=($(echo $(tmux list-windows -F '#I')))
-  echo $windows
-  exit
-  current_session=$(tmux display-message -p '#I')
-  last_session=$(tmux display-message -p '#{last_window}')
-
-  for i in "${!sessions[@]}"; do
-    if [[ "${sessions[$i]}" = "${last_session}" ]]; then
-      last_session_index="${i}"
-    fi
-  done
-  new_session_list=($last_session)
-  unset sessions[$last_session_index]
-  for i in "${!sessions[@]}"; do
-    new_session_list+=(${sessions[$i]})
-  done
-
-  session=$(printf "%s\n" ${new_session_list[@]} | fzf ${fzf_opts} --prompt=" Sessions: ")
-
-  if [[ "${new_session_list[@]}" =~ "${session}" ]]; then
-    tmux switch-client -t $session
-  fi
-}
-
 sessions () {
   sessions=($(echo $(tmux list-sessions -F '#S')))
   current_session=$(tmux display-message -p '#S')
@@ -494,7 +470,7 @@ sessions () {
   fi
 }
 
-session_close () {
+session_quit () {
 
   tmux_current_session=$(tmux display-message -p '#S')
   sessions=($(echo $(tmux list-sessions -F '#S')))
@@ -816,6 +792,19 @@ init () {
     session_file=''
     session_pane=1
     session_detached=""
+    if [ ! -z "$(tmux ls 2> /dev/null | grep $session_name)" ]; then
+      echo ""
+      echo "  Found existing session: ${session_name}"
+      echo "  Opening: ${session_name}"
+      echo ""
+      sleep 2
+      if [ ! -z "$TMUX" ]; then
+        tmux switch-client -t $session_name
+      else
+        tmux a -t ${session_name}
+      fi
+      exit
+    fi
   elif [ ! -z "$1" ] && [ -d "$1" ]; then
     session_name=$(basename -- $1)
     session_dir=${1}
@@ -864,8 +853,7 @@ init () {
   if [ ! -z "$TMUX" ]; then
     session_connect="switch-client -t $session_name"
   else
-
-      session_connect="attach -t $session_name"
+    session_connect="attach -t $session_name"
   fi
 
   tmux \
