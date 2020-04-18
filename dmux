@@ -63,8 +63,8 @@ bind -n M-n split-window -t 2 -l 10 -b -v 'dmux new'
 bind -n M-c split-window -t 2 -l 10 -b -v 'dmux clone'
 bind -n M-s split-window -t 2 -l 10 -b -v 'dmux sessions'
 bind -n M-q split-window -t 2 -l 3 -b -v 'dmux session_quit'
+bind -n C-q split-window -t 2 -l 3 -b -v 'dmux window_quit'
 bind -n C-w run-shell 'dmux window'
-bind -n C-q run-shell 'dmux window_quit'
 bind -n M-r select-layout '32f3,191x73,0,0{35x73,0,0,0,155x73,36,0[155x54,36,0,1,155x18,36,55,2]}'
 
 set -g status-right "#(dmux sessions_status_line) #[fg=black,bg=green] "
@@ -746,6 +746,19 @@ clone () {
       exit
   fi
 
+}
+window_quit () {
+
+  tmux_current_window="$(tmux display-message -p '#I'):$(tmux display-message -p '#W')"
+  windows=($(echo $(tmux list-windows -F '#I')))
+  windows_length=${#windows[@]}
+  confirm=$(get_reply 'Close current window "'$tmux_current_window'"?')
+
+  if [ "$windows_length" -gt 1 ]; then
+    if [ "$confirm" = "yes" ]; then
+      tmux kill-window
+    fi
+  fi
 }
 
 window () {
