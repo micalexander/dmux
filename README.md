@@ -24,16 +24,11 @@ alias vim='dmux vim'
 *This way vim will continue to work the same when not in dmux*
 
 #### Step three
-Add the following lines to your `.tmux.conf` file
+Add the following lines to the top your `.tmux.conf` file
 ```
-bind -n M-o split-window -t 2 -l 10 -b -v 'dmux open'
-bind -n M-n split-window -t 2 -l 10 -b -v 'dmux new'
-bind -n M-c split-window -t 2 -l 10 -b -v 'dmux clone'
-bind -n M-s split-window -t 2 -l 10 -b -v 'dmux sessions'
-bind -n M-w split-window -t 2 -l 3 -b -v 'dmux session_close'
-set -g status-right '#(dmux sessions_status_line)'
+source ~/.dmux.conf
 ```
-*This will add some useful commands to tmux*
+*This way you will be able to override defaults*
 
 #### Step four
 Change the `default_projects_dir="$HOME/Cloud/Development/projects"` variable in the dmux file to match your project folders location
