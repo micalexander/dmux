@@ -63,7 +63,7 @@ bind -n M-n split-window -t 2 -l 10 -b -v 'dmux new'
 bind -n M-c split-window -t 2 -l 10 -b -v 'dmux clone'
 bind -n M-s split-window -t 2 -l 10 -b -v 'dmux sessions'
 bind -n M-q split-window -t 2 -l 3 -b -v 'dmux session_close'
-bind -n M-w run-shell 'dmux window'
+bind -n C-w run-shell 'dmux window'
 bind -n M-r select-layout '32f3,191x73,0,0{35x73,0,0,0,155x73,36,0[155x54,36,0,1,155x18,36,55,2]}'
 
 set -g status-right "#(dmux sessions_status_line) #[fg=black,bg=green] "
@@ -123,6 +123,11 @@ if [ -z "$DMUX_PROJECTS" ]; then
 fi
 
 default_projects_dir="$DMUX_PROJECTS"
+if [ -z "$DMUX_LAYOUT" ]; then
+  layout='32f3,191x73,0,0{35x73,0,0,0,155x73,36,0[155x54,36,0,1,155x18,36,55,2]}'
+else
+  layout=$DMUX_LAYOUT
+fi
 
 fzf_height=$(test -z "$TMUX" && echo '--height 30%' || echo '--height 100%')
 fzf_opts="
@@ -774,8 +779,8 @@ window () {
       setw -g pane-base-index 1 \; \
       split-window -h 'dmux vim;bash -l' \; \
       split-window -v \; \
-      select-layout '32f3,191x73,0,0{35x73,0,0,0,155x73,36,0[155x54,36,0,1,155x18,36,55,2]}' \; \
-      select-pane -t 1
+      select-layout "${layout}" \; \
+      select-pane -t 2
   fi
 }
 
@@ -869,7 +874,7 @@ init () {
     ${session_connect} \; \
     split-window -c ${session_dir} -h \; \
     split-window -c ${session_dir} -h \; \
-    select-layout '32f3,191x73,0,0{35x73,0,0,0,155x73,36,0[155x54,36,0,1,155x18,36,55,2]}' \; \
+    select-layout "${layout}" \; \
     send-keys -t 1 'difm' Enter \; \
     select-pane -t 2 \; \
     send-keys -t 2 'dmux vim ' Enter
