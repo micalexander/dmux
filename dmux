@@ -424,7 +424,7 @@ vim () {
     nvim_socket=$(find /tmp/* -type s -regex ".*$current_session_window-[1-9]-nvimsocket")
 
     # Check to see if there is a socker for the current session
-    if [ -z "$tmux_nvim_socket" ]; then
+    if [ -z "$nvim_socket" ]; then
       # Open vim in current pane
       NVIM_LISTEN_ADDRESS=/tmp/$current_session_window-$target_pane-nvimsocket nvim "$@"
     else
