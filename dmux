@@ -74,6 +74,7 @@ bind -n M-n split-window -t 2 -l 10 -b -v 'dmux new'
 bind -n M-c split-window -t 2 -l 10 -b -v 'dmux clone'
 bind -n M-s split-window -t 2 -l 10 -b -v 'dmux sessions'
 bind -n M-q split-window -t 2 -l 3 -b -v 'dmux session_quit'
+bind -n M-d split-window -t 2 -l 10 -b -v 'dmux commands'
 bind -n C-q split-window -t 2 -l 3 -b -v 'dmux window_quit'
 bind -n C-w run-shell 'dmux window'
 bind -n M-r select-layout '32f3,191x73,0,0{35x73,0,0,0,155x73,36,0[155x54,36,0,1,155x18,36,55,2]}'
@@ -809,6 +810,18 @@ iconize_open () {
     col3=$(echo $data | awk -F/ '{ print $(NF) }' )
     echo -e "$(addcolor ${icons[$col1]} $col1)  $col1 $(addcolor ${icons[$col2]} $col2) $col2 $col3"
   done
+}
+
+spacialize () {
+  while read data; do
+    echo $data | sed 's/\"//g'  | awk -F' ' -v d='|' -v c='\t' '{print d$(NF -1)d$(NF)d$1d,c,substr($0, index($0,$2))}'
+  done
+}
+
+commands () {
+
+  command="$(tmux list-keys | grep dmux | cut -d' ' -f15-  | cut -d'"' -f-2 | spacialize | column -t -s "|" | fzf  ${fzf_opts} --prompt=" Dmux Commands: " -d'\t' --with-nth=1 | awk -F' ' -v prefix='tmux' -v quote='"' '{print prefix,substr($0, index($0,$4),index(substr($0, index($0,$4) +1), $(NF -1))),quote$(NF -1), $(NF)quote}')"
+  eval $command
 }
 
 open () {
