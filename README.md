@@ -33,17 +33,18 @@ source ~/.dmux.conf
 *This way you will be able to override defaults*
 
 #### Step four
-Change the `default_projects_dir="$HOME/Cloud/Development/projects"` variable in the dmux file to match your project folders location
-*dmux will automatically add a bin and web directory in the `default_projects_dir` location to store your projects in when you create your projects using `dmux new [project_name]`
+Set environment variables. DMUX_PROJECTS is required and should point to where you would like dmux to store your projects. Is optional and is used to set your default layout. These can be set in your ~/.bashrc
+```
+export DMUX_PROJECTS=$HOME/Cloud/Development/projects
+export DMUX_LAYOUT='32f3,191x73,0,0{35x73,0,0,0,155x73,36,0[155x54,36,0,1,155x18,36,55,2]}'
+```
 
 ## Usage
+
 #### Initialize dmux environment
-`dmux init # (or simply dmux)`<br/>
+`dmux # opens a dmux enabled tmux session in the current directory`<br/>
 `dmux [file] # opens dmux and opens file in vim and vifm`<br/>
 `dmux [directory] # opens dmux and opens directory in vifm`<br/>
-
-#### New dmux window (inside of tmux)
-`dmux window`
 
 #### New dmux project
 `dmux new [project_name]`
@@ -53,3 +54,6 @@ Change the `default_projects_dir="$HOME/Cloud/Development/projects"` variable in
 
 #### Open a dmux project with interactivly
 `dmux open`
+
+#### New dmux window (inside of tmux)
+`dmux window`
