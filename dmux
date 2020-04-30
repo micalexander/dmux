@@ -427,7 +427,7 @@ vim () {
     current_window=$(tmux display-message -p '#I')
     current_session_window=tmux-$current_session-$current_window
     target_pane=$(tmux display-message -p '#P')
-    nvim_socket=$(find /tmp/* -type s -regex ".*$current_session_window-[1-9]-nvimsocket")
+    nvim_socket=$(find /tmp/ -type s -regex ".*$current_session_window-[1-9]-nvimsocket" -maxdepth 1 )
 
     # Check to see if there is a socker for the current session
     if [ -z "$nvim_socket" ]; then
@@ -950,3 +950,4 @@ else
     exit 1
   fi
 fi
+
