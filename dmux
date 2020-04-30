@@ -35,10 +35,6 @@ tee ~/.dmux.conf <<'EOF' > /dev/null
 set -g base-index 1
 setw -g pane-base-index 1
 
-unbind C-b
-set -g prefix C-Space
-bind C-Space send-prefix
-
 # Automatically set window title
 set-window-option -g automatic-rename on
 set-option -g set-titles on
@@ -209,6 +205,7 @@ declare -A types=(
   [desktop]=
   [game]=
   [mobile]=
+  [tv]=ﳲ
   [cli]=
 )
 
@@ -221,6 +218,7 @@ declare -A languages=(
   [html]=
   [slim]=
   [ejs]=
+  [brs]=ﳲ
   [wordpress]=
   [gulp]=
   [gulpfile]=
@@ -351,6 +349,7 @@ declare -A colormap=(
   [swift]=red
   [c++]=blue
   [cc]=blue
+  [tv]=yellow
   [cpp]=blue
   [cxx]=blue
   [py]=blue
