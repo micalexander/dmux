@@ -436,7 +436,7 @@ vim () {
     else
       # Open file in vim from another pane
       target_pane=$(echo $nvim_socket | awk -F'-' '{print $(NF -1)}')
-      tmux select-pane -t $target_pane \; run-shell "nvr --servername $nvim_socket "$@""
+      tmux select-pane -t $target_pane \; run-shell -t $target_pane "nvr --servername $nvim_socket \"$@\""
     fi
   else
     NVIM_LISTEN_ADDRESS=/tmp/nvimsocket nvim "$@"
