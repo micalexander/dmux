@@ -36,8 +36,20 @@ source ~/.dmux.conf
 Set environment variables. DMUX_PROJECTS is required and should point to where you would like dmux to store your projects. Is optional and is used to set your default layout. These can be set in your ~/.bashrc
 ```
 export DMUX_PROJECTS=$HOME/Cloud/Development/projects
-export DMUX_LAYOUT='32f3,191x73,0,0{35x73,0,0,0,155x73,36,0[155x54,36,0,1,155x18,36,55,2]}'
+export DMUX_LAYOUTS='3840x1600:32f3,191x73,0,0{35x73,0,0,0,155x73,36,0[155x54,36,0,1,155x18,36,55,2]}|2560x1600:ea33,130x35,0,0{20x35,0,0,0,109x35,21,0[109x26,21,0,1,109x8,21,27,2]}'
+
 ```
+##### DMUX_LAYOUTS format
+The format of this variable should be `DMUX_LAYOUTS='resolution1:layout2|resolution1:layout2'` where resolution1 is the screen resolution (e.g. 3840x1600) and layout1 is tmux layout. To get the current resolution of the display on macos you can run the following command.
+
+```system_profiler SPDisplaysDataType | grep Resolution | awk -F' ' '{print $2$3$4 }'```
+
+To get the current layout of tmux, while tmux is running run the following command `tmux list-windows`. The output will look something like the following for each tmux window you have open.
+
+```1: bash* (3 panes) [173x66] [layout a49c,173x66,0,0{26x66,0,0,0,146x66,27,0[146x50,27,0,1,146x15,27,51,2]}] @0 (active)```
+
+Dmux only needs the layout from the above output which is everything after the keyword layout in the second set of brakets. 
+
 
 ## Usage
 
