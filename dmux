@@ -136,10 +136,22 @@ if [ -z "$DMUX_PROJECTS" ]; then
 fi
 
 default_projects_dir="$DMUX_PROJECTS"
-if [ -z "$DMUX_LAYOUT" ]; then
- layout='32f3,191x73,0,0{35x73,0,0,0,155x73,36,0[155x54,36,0,1,155x18,36,55,2]}'
+
+layouts=($(echo "$DMUX_LAYOUTS" | tr '|' '\n'))
+resolution=($(system_profiler SPDisplaysDataType | grep Resolution | awk -F' ' '{print $2$3$4 }'))
+
+for i in "${!layouts[@]}"
+do
+  layout_resolution=$(echo ${layouts[$i]} | cut -f1 -d ':')
+  if [ "$layout_resolution" == "${resolution[${#resolution[@]}-1]}" ]; then
+    layout_user=$(echo ${layouts[$i]} | cut -f2- -d ':')
+  fi
+done
+
+if [ -z "$DMUX_LAYOUTS" ]; then
+  layout='32f3,191x73,0,0{35x73,0,0,0,155x73,36,0[155x54,36,0,1,155x18,36,55,2]}'
 else
-  layout=$DMUX_LAYOUT
+  layout=$layout_user
 fi
 
 fzf_height=$(test -z "$TMUX" && echo '--height 30%' || echo '--height 100%')
@@ -152,6 +164,14 @@ fzf_opts="
  --color=info:#d7005f,prompt:#c678dd,pointer:#af5fff
  --color=header:#282c34,gutter:#282c34
  --color=marker:#87ff00,spinner:#af5fff"
+
+layout () {
+  if [ ! -z "$TMUX" ]; then
+    sys_res=($(system_profiler SPDisplaysDataType | grep Resolution | awk -F' ' '{print $2$3$4 }'))
+    tmux_layout=$(tmux list-windows | cut -f2- -d ']' | cut -f1 -d '@' | cut -f1 -d ']' | awk -F' ' '{print $NF}')
+    echo ${sys_res[${#sys_res[@]}-1]}:$tmux_layout
+  fi
+}
 
 get_reply () {
 
