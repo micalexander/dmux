@@ -35,10 +35,6 @@ tee ~/.dmux.conf <<'EOF' > /dev/null
 set -g base-index 1
 setw -g pane-base-index 1
 
-unbind C-b
-set -g prefix C-Space
-bind C-Space send-prefix
-
 # Automatically set window title
 set-window-option -g automatic-rename on
 set-option -g set-titles on
@@ -46,6 +42,8 @@ set-option -g set-titles on
 set -g status-keys vi
 set -g history-limit 10000
 setw -g monitor-activity on
+
+# bind-key -n C-v send-keys -t 3 !! Enter
 
 bind-key v split-window -h
 bind-key s split-window -v
@@ -207,7 +205,6 @@ declare -A types=(
   [desktop]=
   [game]=
   [mobile]=
-  [tv]=ﳲ
   [cli]=
 )
 
@@ -220,7 +217,6 @@ declare -A languages=(
   [html]=
   [slim]=
   [ejs]=
-  [brs]=ﳲ
   [wordpress]=
   [gulp]=
   [gulpfile]=
@@ -351,7 +347,6 @@ declare -A colormap=(
   [swift]=red
   [c++]=blue
   [cc]=blue
-  [tv]=yellow
   [cpp]=blue
   [cxx]=blue
   [py]=blue
@@ -427,7 +422,7 @@ vim () {
     current_window=$(tmux display-message -p '#I')
     current_session_window=tmux-$current_session-$current_window
     target_pane=$(tmux display-message -p '#P')
-    nvim_socket=$(find /tmp/ -type s -regex ".*$current_session_window-[1-9]-nvimsocket" -maxdepth 1 )
+    nvim_socket=$(find /tmp/* -type s -regex ".*$current_session_window-[1-9]-nvimsocket")
 
     # Check to see if there is a socker for the current session
     if [ -z "$nvim_socket" ]; then
@@ -436,7 +431,7 @@ vim () {
     else
       # Open file in vim from another pane
       target_pane=$(echo $nvim_socket | awk -F'-' '{print $(NF -1)}')
-      tmux select-pane -t $target_pane \; run-shell -t $target_pane "nvr --servername $nvim_socket \"$@\""
+      tmux select-pane -t $target_pane \; run-shell "nvr --servername $nvim_socket "$@""
     fi
   else
     NVIM_LISTEN_ADDRESS=/tmp/nvimsocket nvim "$@"
@@ -831,12 +826,12 @@ commands () {
 
 open () {
   if [ -z "$1" ]; then
-    dir="$default_projects_dir"
+    query=""
   else
-    dir=$1
+    query=$1
   fi
 
-  project_path="$(fd . $dir/**/* --type d -d 1 | iconize_open | sort -k5 | fzf ${fzf_opts} --prompt=" Open Project: " -d" " --with-nth="1,4,6" | awk -F' ' -v dir=$dir -v slash='/' '{print dir slash $(NF -3) slash $(NF -1) slash $(NF)}')"
+  project_path="$(fd . $default_projects_dir/**/* --type d -d 1 | iconize_open | sort -k5 | fzf ${fzf_opts} --query="$query" --prompt=" Open Project: " -d" " --with-nth="1,4,6" | awk -F' ' -v dir=$dir -v slash='/' '{print dir slash $(NF -3) slash $(NF -1) slash $(NF)}')"
 
   if [ -z "$project_path" ]; then
     exit
