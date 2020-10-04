@@ -50,6 +50,8 @@ To get the current layout of tmux, while tmux is running run the following comma
 
 Dmux only needs the layout from the above output which is everything after the keyword layout in the second set of brakets. 
 
+You can have multiple layouts to account for different screen sizes. To do this simply add them to the DMUX_LAYOUTS varaible delimiting them a single pipe character.
+
 
 ## Usage
 
