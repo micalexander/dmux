@@ -224,6 +224,7 @@ declare -A types=(
   [web]=
   [desktop]=
   [game]=
+  [db]=
   [mobile]=
   [tv]=ﳲ
   [cli]=
@@ -238,6 +239,7 @@ declare -A languages=(
   [html]=
   [slim]=
   [ejs]=
+  [brs]=ﳲ
   [wordpress]=
   [gulp]=
   [gulpfile]=
@@ -444,7 +446,7 @@ vim () {
     current_window=$(tmux display-message -p '#I')
     current_session_window=tmux-$current_session-$current_window
     target_pane=$(tmux display-message -p '#P')
-    nvim_socket=$(find /tmp/* -type s -regex ".*$current_session_window-[1-9]-nvimsocket")
+    nvim_socket=$(find /tmp/* -type s -regex ".*$current_session_window-[1-9]-nvimsocket" 2> /dev/null)
 
     # Check to see if there is a socker for the current session
     if [ -z "$nvim_socket" ]; then
@@ -453,7 +455,7 @@ vim () {
     else
       # Open file in vim from another pane
       target_pane=$(echo $nvim_socket | awk -F'-' '{print $(NF -1)}')
-      tmux select-pane -t $target_pane \; run-shell "nvr --servername $nvim_socket "$@""
+      tmux select-pane -t $target_pane \; run-shell "nvr --servername $nvim_socket '$@'"
     fi
   else
     NVIM_LISTEN_ADDRESS=/tmp/nvimsocket nvim "$@"
@@ -491,6 +493,7 @@ addc () {
 
   echo -e "$prefix${fgcolor[$1]}$suffix$2$prefix${fgcolor[none]}$suffix"
 }
+
 addcolor () {
 
   prefix="\033["
@@ -834,6 +837,7 @@ iconize_open () {
     col1=$(echo $data | awk -F/ '{ print $(NF -2) }' )
     col2=$(echo $data | awk -F/ '{ print $(NF -1) }' )
     col3=$(echo $data | awk -F/ '{ print $(NF) }' )
+
     echo -e "$(addcolor ${icons[$col1]} $col1)  $col1 $(addcolor ${icons[$col2]} $col2) $col2 $col3"
   done
 }
@@ -973,4 +977,3 @@ else
     exit 1
   fi
 fi
-
